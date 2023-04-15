@@ -20,5 +20,5 @@ start-prod: ## Start the prod container stack
 copy-prod: ## Copy from prod container
 	@echo "Copying from production into extracted folder..."
 	docker container create --name temp nextjs-prod:2.0
-	docker container cp temp:/app ./extracted/prod
+	docker container cp temp:/app ./extracted
 	docker container rm temp

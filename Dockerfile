@@ -7,7 +7,6 @@ RUN apk add --no-cache libc6-compat
 RUN yarn add next react react-dom
 CMD [ "yarn", "create", "next-app" ]
 
-
 # from https://github.com/vercel/next.js/discussions/16995#discussioncomment-2074122
 
 # with my edits
@@ -30,12 +29,14 @@ COPY ./app/package*.json ./app/yarn.lock ./
 
 RUN yarn install --frozen-lockfile
 
+# builder
 FROM node:17.1.0-alpine3.12 AS builder
 ENV NODE_ENV=development
 WORKDIR /app
 COPY ./app .
 RUN yarn install --frozen-lockfile && NODE_ENV=production yarn build
 
+# build for production
 FROM node:17.1.0-alpine3.12 AS production
 WORKDIR /app
 ENV HOST=0.0.0.0
@@ -43,10 +44,10 @@ ENV PORT=3000
 ENV NODE_ENV=production
 COPY --chown=node --from=builder /app/next.config.js ./
 COPY --chown=node --from=builder /app/public ./public
+COPY --chown=node --from=builder /app/out ./out
 COPY --chown=node --from=builder /app/.next ./.next
 COPY --chown=node --from=builder /app/yarn.lock /app/package.json ./
 COPY --chown=node --from=dependencies /app/node_modules ./node_modules
-#for debug purposes COPY --chown=node --from=builder /app/ ./app-builded
 USER node
 EXPOSE 3000
 CMD [ "yarn", "start" ]
