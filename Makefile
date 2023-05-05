@@ -1,7 +1,10 @@
-ENV_VERSION:=2.1
+ENV_VERSION:=2.2
 PROJ_NAME:=nextjs-demo
-PROJ_FOLDER:=app
+PROJ_FOLDER:=app6
 PROJ_OUTPUT:=extracted
+NEXT_VERSION:=13.4.1
+REACT_VERSION:=18.2.0
+REACT_DOM_VERSION:=18.2.0
 
 help: ## View all make targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -9,13 +12,17 @@ help: ## View all make targets
 
 init-app: ## Creating the app
 	@echo "Creating the app..."
-	docker build -t ${PROJ_NAME}:init --build-arg FOLDER_NAME=${PROJ_FOLDER} --target appinit .
+	docker build -t ${PROJ_NAME}:init \
+		--build-arg FOLDER_NAME=${PROJ_FOLDER} \
+		--build-arg NEXT_VERSION=${NEXT_VERSION} \
+		--build-arg REACT_VERSION=${REACT_VERSION} \
+		--build-arg REACT_DOM_VERSION=${REACT_DOM_VERSION} \
+		--target appinit .
 	@echo "Please name the app '${PROJ_FOLDER}' to make the folder"
 	docker run --rm -it --name '${PROJ_NAME}-init' -v ${PWD}/:/app -e FOLDER_NAME=${PROJ_FOLDER} -w /app ${PROJ_NAME}:init
 	@sudo chown -R 1000 ./${PROJ_FOLDER}
 #	remove node_modules as they will be generated on start-dev step
-	@sudo cd ./${PROJ_FOLDER}/ && mv node_modules/ node_modules-/
-#	@sudo rm -r ./${PROJ_FOLDER}/node_modules/
+	cd ./${PROJ_FOLDER}/ && sudo tar -czf node.modules.tar.gz node_modules/ && sudo rm -r node_modules/
 
 start-dev: ## Start the dev container stack
 	@echo "Starting up dev container..."
@@ -35,6 +42,6 @@ start-prod: ## Start the prod container stack
 copy-prod: ## Copy from prod container
 	@echo "Copying from production into extracted folder..."
 	@docker container create --name temp ${PROJ_NAME}:prod
-	docker container cp temp:/app/out ./${PROJ_OUTPUT}
-#	docker container cp temp:/app ./${PROJ_OUTPUT}
+#	docker container cp temp:/app/dist ./${PROJ_OUTPUT}
+	docker container cp temp:/app ./${PROJ_OUTPUT}
 	@docker container rm temp
